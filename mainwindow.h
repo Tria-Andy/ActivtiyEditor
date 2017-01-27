@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QItemSelectionModel>
 #include "settings.h"
 #include "jsonhandler.h"
 #include "activity.h"
 #include "calculation.h"
+#include "del_intselect.h"
 
 namespace Ui {
 class MainWindow;
@@ -23,15 +25,21 @@ private slots:
     void on_actionClear_triggered();
     void on_actionExit_triggered();
     void on_actionLoad_triggered();
-
     void on_treeView_intervall_clicked(const QModelIndex &index);
+    void on_actionRecalc_triggered();
+    void on_actionUnSelect_triggered();
+    void on_toolButton_update_clicked();
+    void on_toolButton_upInt_clicked();
+    void on_toolButton_downInt_clicked();
 
 private:
     Ui::MainWindow *ui;
 
     Activity *curr_activity;
     jsonHandler *jsonhandler;
-
+    QItemSelectionModel *treeSelection;
+    del_intselect intSelect_del;
+    int avgCounter;
     //Intervall Chart
     QVector<double> secTicker,speedValues,polishValues,speedMinMax,rangeMinMax;
     void set_speedValues(int);
@@ -42,6 +50,9 @@ private:
     //Editor
     void select_activity_file();
     void loadfile(const QString &filename);
+    void setSelectedIntRow(QModelIndex);
+    void selectAvgValues(QModelIndex,int);
+    void setCurrentTreeIndex(bool);
     void set_activty_infos();
     void set_activty_intervalls();
     void set_avg_fields();

@@ -154,6 +154,7 @@ void jsonHandler::read_json(QString jsonfile)
             objValue = objOverride[objOverride.keys().first()].toObject();
             overrideData.insert(objOverride.keys().first(),objValue["value"].toString());
         }
+        curr_act->setUpdateFlag(hasOverride);
     }
 
     itemObject = item_ride.value(QString("TAGS")).toObject();
@@ -175,7 +176,7 @@ void jsonHandler::read_json(QString jsonfile)
     valueList << itemArray.at(0).toObject().keys();
     mapValues = settings::get_intList();
     this->fill_keyList(&intList,&mapValues,&valueList);
-    curr_act->int_model = new QStandardItemModel(itemArray.count(),intList.count());
+    curr_act->int_model = new QStandardItemModel(itemArray.count(),intList.count()+3);
     this->fill_model(curr_act->int_model,&itemArray,&intList);
 
     valueList = QStringList();
@@ -253,9 +254,8 @@ void jsonHandler::write_json()
 
     if(hasFile)
     {
-        bool isrecalc = settings::get_act_isrecalc();
-        p_int = curr_act->set_int_model_pointer(isrecalc);
-        p_samp = curr_act->set_samp_model_pointer(isrecalc);
+        p_int = curr_act->int_model;
+        p_samp = curr_act->edit_samp_model;
         item_ride["INTERVALS"] = modelToJson(p_int,&intList);
         item_ride["SAMPLES"] = modelToJson(p_samp,&sampList);
     }

@@ -139,9 +139,9 @@ QColor settings::get_colorRGB(QString colorValue,bool trans)
 
 void settings::loadSettings()
 {
-    header_swim << "Interval" << "Type" << "Laps" << "Distance" << "Duration" << "Pace" << "Speed" << "Strokes";
-    header_bike << "Interval" << "Duration" << "Distance" << "Distance (Int)" << "Pace" << "Speed" << "Watt" << "CAD";
-    header_run << "Interval" << "Duration" << "Distance" << "Distance (Int)" << "Pace" << "Speed";
+    header_swim << "Interval" << "Type" << "Laps" << "Distance" << "Duration" << "Start" << "Pace" << "Speed" << "Strokes";
+    header_bike << "Interval" << "Duration" << "Start"<< "Distance" << "Distance (Int)" << "Pace" << "Speed" << "Watt" << "CAD";
+    header_run << "Interval" << "Duration" << "Start"<< "Distance" << "Distance (Int)" << "Pace" << "Speed";
 
     header_int_time << "Interval" << "Start Sec" << "Stop Sec" << "Distance";
     header_swim_time << "Lap" << "Start" << "Time" << "Strokes" << "Speed";
@@ -278,6 +278,9 @@ void settings::loadSettings()
         myvalues->beginGroup("IntEditor");
             settingList = myvalues->value("parts").toString().split(splitter);
             listMap.insert("IntEditor",settingList);
+            settingList.clear();
+            settingList = myvalues->value("swimstyle").toString().split(splitter);
+            listMap.insert("SwimStyle",settingList);
             settingList.clear();
         myvalues->endGroup();
 

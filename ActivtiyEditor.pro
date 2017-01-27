@@ -36,6 +36,7 @@ HEADERS  += mainwindow.h \
     calculation.h \
     jsonhandler.h \
     settings.h \
-    activity.h
+    activity.h \
+    del_intselect.h
 
 FORMS    += mainwindow.ui
