@@ -8,8 +8,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     settings::loadSettings();
     avgCounter = 0;
-    ui->frame_avg->setVisible(false);
-    ui->frame_editInt->setVisible(true);
+    this->set_speedgraph();
+    this->resetPlot();
 }
 
 MainWindow::~MainWindow()
@@ -60,11 +60,11 @@ void MainWindow::loadfile(const QString &filename)
         curr_activity = new Activity();
         filecontent = file.readAll();
         jsonhandler = new jsonHandler(true,filecontent,curr_activity);
+        curr_activity->set_jsonhandler(jsonhandler);
         file.close();
 
         settings::set_act_isload(true);
-        intSelect_del.sport = curr_activity->get_sport();
-
+        intSelect_del.sport = tree_del.sport = curr_activity->get_sport();
         this->set_activty_infos();
         this->set_activty_intervalls();
     }
@@ -76,19 +76,22 @@ void MainWindow::set_activty_intervalls()
     ui->treeView_intervall->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->treeView_intervall->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->treeView_intervall->header()->setMinimumSectionSize(100);
+    ui->treeView_intervall->setItemDelegate(&tree_del);
+
     treeSelection = ui->treeView_intervall->selectionModel();
+    connect(treeSelection,SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(setSelectedIntRow(QModelIndex)));
 
     ui->tableView_selectInt->setModel(curr_activity->selItemModel);
     ui->tableView_selectInt->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableView_selectInt->verticalHeader()->setVisible(false);
     ui->tableView_selectInt->horizontalHeader()->setVisible(false);
+    ui->tableView_selectInt->verticalHeader()->setFixedWidth(ui->tableView_selectInt->width()/2);
     ui->tableView_selectInt->setItemDelegate(&intSelect_del);
 
     ui->tableView_avgValues->setModel(curr_activity->avgModel);
+    ui->tableView_avgValues->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableView_avgValues->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableView_avgValues->verticalHeader()->setVisible(false);
     ui->tableView_avgValues->horizontalHeader()->setVisible(false);
-    ui->tableView_avgValues->setShowGrid(false);
+    ui->tableView_avgValues->verticalHeader()->setFixedWidth(ui->tableView_avgValues->width()/2);
 }
 
 void MainWindow::set_activty_infos()
@@ -143,9 +146,12 @@ void MainWindow::set_activty_infos()
 
 void MainWindow::on_actionClear_triggered()
 {
-    curr_activity->int_model->clear();
-    curr_activity->samp_model->clear();
+    this->resetPlot();
+    curr_activity->intModel->clear();
+    curr_activity->sampleModel->clear();
     curr_activity->intTreeModel->clear();
+    curr_activity->avgModel->clear();
+    curr_activity->selItemModel->clear();
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -194,6 +200,13 @@ void MainWindow::setSelectedIntRow(QModelIndex index)
     {
         curr_activity->showInterval(true);
     }
+
+    if(curr_activity->intTreeModel->itemFromIndex(index)->parent() == nullptr)
+    {
+        ui->horizontalSlider_factor->setValue(0);
+        this->set_speedValues(index.row());
+    }
+
     intSelect_del.intType = isInt;
     ui->label_lapType->setText(intLabel.at(isInt));
 }
@@ -204,7 +217,7 @@ void MainWindow::selectAvgValues(QModelIndex index, int avgCol)
     QStandardItem *avgItem = curr_activity->intTreeModel->itemFromIndex(treeSelection->selectedRows(avgCol).at(0));
 
     bool checkAvg = avgItem->data().toBool();
-    //curr_activity->intTreeModel->itemFromIndex(index)->setBackground(QBrush(Qt::green));
+
     for(int i = 0; i < treeSelection->selectedIndexes().count();++i)
     {
         curr_activity->selItem.insert(i,treeSelection->selectedRows(i).at(0));
@@ -233,15 +246,187 @@ void MainWindow::on_treeView_intervall_clicked(const QModelIndex &index)
 
     if(index.column() == avgCol)
     {
-        ui->frame_editInt->setVisible(false);
-        ui->frame_avg->setVisible(true);
         this->selectAvgValues(index,avgCol);
+        ui->treeView_intervall->setItemDelegateForRow(index.row(),&avgSelect_del);
     }
     else
     {
-        ui->frame_editInt->setVisible(true);
-        ui->frame_avg->setVisible(false);
-        this->setSelectedIntRow(index);
+        treeSelection->setCurrentIndex(index,QItemSelectionModel::Select);
+    }
+}
+
+void MainWindow::on_horizontalSlider_factor_valueChanged(int value)
+{
+    ui->label_factorValue->setText(QString::number(10-value) + "%");
+    double factor = static_cast<double>(value)/100;
+    int indexRow = ui->treeView_intervall->currentIndex().row();
+    this->set_polishValues(indexRow,factor);
+    rangeMinMax[0] = curr_activity->polish_SpeedValues(1.0,curr_activity->get_int_speed(indexRow),0.1-factor,false);
+    rangeMinMax[1] = curr_activity->polish_SpeedValues(50.0,curr_activity->get_int_speed(indexRow),0.1-factor,false);
+    ui->lineEdit_polMin->setText(QString::number(rangeMinMax[0]));
+    ui->lineEdit_polMax->setText(QString::number(rangeMinMax[1]));
+}
+
+void MainWindow::set_polishValues(int lap,double factor)
+{
+    double avg = curr_activity->get_int_speed(lap);
+    double intdist = curr_activity->get_int_distance(lap);
+    for(int i = 0; i < speedValues.count(); ++i)
+    {
+        if(lap == 0 && i < 5)
+        {
+            polishValues[i] = speedValues[i];
+        }
+        else
+        {
+            polishValues[i] = curr_activity->polish_SpeedValues(speedValues[i],avg,0.10-factor,true);
+        }
+    }
+    this->set_speedPlot(avg,intdist);
+}
+
+void MainWindow::set_speedValues(int index)
+{
+    int lapLen;
+    double current = 0;
+    double avg = curr_activity->get_int_speed(index);
+    double intdist = curr_activity->get_int_distance(index);
+
+    int start = curr_activity->intModel->data(curr_activity->intModel->index(index,1,QModelIndex())).toInt();
+    int stop = curr_activity->intModel->data(curr_activity->intModel->index(index,2,QModelIndex())).toInt();
+    speedMinMax.resize(2);
+    rangeMinMax.resize(2);
+    speedMinMax[0] = 40.0;
+    speedMinMax[1] = 0.0;
+    lapLen = stop-start;
+
+    speedValues.resize(lapLen+1);
+    polishValues.resize(lapLen+1);
+    secTicker.resize(lapLen+1);
+
+    for(int i = start, pos=0; i <= stop; ++i,++pos)
+    {
+        current = curr_activity->sampSpeed[i];
+        secTicker[pos] = pos;
+        speedValues[pos] = current;
+        if(speedMinMax[0] > current) rangeMinMax[0] = speedMinMax[0] = current;
+        if(speedMinMax[1] < current) rangeMinMax[1] = speedMinMax[1] = current;
+    }
+
+    if(curr_activity->get_sport() != settings::isSwim) this->set_polishValues(index,0.0);
+    this->set_speedPlot(avg,intdist);
+}
+
+void MainWindow::resetPlot()
+{
+    ui->widget_plot->clearPlottables();
+    ui->widget_plot->clearItems();
+    speedValues.resize(100);
+    secTicker.resize(100);
+    secTicker.fill(0);
+    speedValues.fill(0);
+    QCPGraph *resetLine = ui->widget_plot->addGraph();
+    resetLine->setPen(QPen(QColor(255,255,255),2));
+    resetLine->setData(secTicker,speedValues);
+    resetLine->setName("-");
+    ui->widget_plot->xAxis->setRange(0,100);
+    ui->widget_plot->xAxis2->setRange(0,1);
+    ui->widget_plot->yAxis->setRange(0,5);
+    ui->widget_plot->plotLayout()->setRowStretchFactor(1,0.0001);
+    ui->widget_plot->replot();
+}
+
+
+void MainWindow::set_speedgraph()
+{
+    QFont plotFont;
+    plotFont.setBold(true);
+    plotFont.setPointSize(8);
+
+    ui->widget_plot->xAxis->setLabel("Seconds");
+    ui->widget_plot->xAxis->setLabelFont(plotFont);
+    ui->widget_plot->xAxis2->setVisible(true);
+    ui->widget_plot->xAxis2->setLabelFont(plotFont);
+    ui->widget_plot->xAxis2->setLabel("Distance");
+    ui->widget_plot->xAxis2->setTickLabels(true);
+    ui->widget_plot->yAxis->setLabel("Speed");
+    ui->widget_plot->yAxis->setLabelFont(plotFont);
+    ui->widget_plot->yAxis2->setVisible(true);
+    ui->widget_plot->yAxis2->setLabelFont(plotFont);
+    ui->widget_plot->legend->setVisible(true);
+    ui->widget_plot->legend->setFont(plotFont);
+
+    QCPLayoutGrid *subLayout = new QCPLayoutGrid;
+    ui->widget_plot->plotLayout()->addElement(1,0,subLayout);
+    subLayout->setMargins(QMargins(50,0,50,5));
+    subLayout->addElement(0,0,ui->widget_plot->legend);
+}
+
+void MainWindow::set_speedPlot(double avgSpeed,double intdist)
+{
+    ui->widget_plot->clearPlottables();
+    ui->widget_plot->clearItems();
+    ui->widget_plot->legend->setFillOrder(QCPLegend::foColumnsFirst);
+    ui->widget_plot->plotLayout()->setRowStretchFactor(1,0.0001);
+
+    QCPGraph *speedLine = ui->widget_plot->addGraph();
+    speedLine->setName("Speed");
+    speedLine->setLineStyle(QCPGraph::lsLine);
+    speedLine->setData(secTicker,speedValues);
+    speedLine->setPen(QPen(QColor(0,255,0),2));
+
+    QCPItemLine *avgLine = new QCPItemLine(ui->widget_plot);
+    avgLine->start->setCoords(0,avgSpeed);
+    avgLine->end->setCoords(speedValues.count(),avgSpeed);
+    avgLine->setPen(QPen(QColor(0,0,255),2));
+
+    QCPGraph *avgLineP = ui->widget_plot->addGraph();
+    avgLineP->setName("Avg Speed");
+    avgLineP->setPen(QPen(QColor(0,0,255),2));
+
+    if(curr_activity->get_sport() != settings::isSwim)
+    {
+        QCPGraph *polishLine = ui->widget_plot->addGraph();
+        polishLine->setName("Polished Speed");
+        polishLine->setLineStyle(QCPGraph::lsLine);
+        polishLine->setData(secTicker,polishValues);
+        polishLine->setPen(QPen(QColor(255,0,0),2));
+
+        QCPGraph *polishRangeP = ui->widget_plot->addGraph();
+        polishRangeP->setName("Polish Range");
+        polishRangeP->setPen(QPen(QColor(225,225,0),2));
+
+        QCPItemRect *polishRange = new QCPItemRect(ui->widget_plot);
+        polishRange->topLeft->setCoords(0,rangeMinMax[1]);
+        polishRange->bottomRight->setCoords(speedValues.count(),rangeMinMax[0]);
+        polishRange->setPen(QPen(QColor(225,225,0),2));
+        polishRange->setBrush(QBrush(QColor(255,255,0,50)));
+    }
+
+    double yMin = 0,yMax = 0;
+    if(speedMinMax[0] > 0)
+    {
+        yMin = speedMinMax[0]*0.1;
+    }
+    yMax =  speedMinMax[1]*0.1;
+
+    ui->widget_plot->xAxis->setRange(0,speedValues.count());
+    ui->widget_plot->xAxis2->setRange(0,intdist);
+    ui->widget_plot->yAxis->setRange(speedMinMax[0]-yMin,speedMinMax[1]+yMax);
+    ui->widget_plot->yAxis2->setRange(speedMinMax[0]-yMin,speedMinMax[1]+yMax);
+
+    ui->widget_plot->replot();
+}
+
+void MainWindow::on_actionSave_triggered()
+{
+    if(curr_activity->get_sport() == settings::isSwim)
+    {
+        curr_activity->updateSwimModel();
+    }
+    else
+    {
+        curr_activity->updateIntModel(2,1);
     }
 }
 
@@ -289,8 +474,7 @@ void MainWindow::setCurrentTreeIndex(bool up)
         ui->toolButton_downInt->setEnabled(true);
     }
 
-    this->setSelectedIntRow(index);
-    ui->treeView_intervall->setCurrentIndex(index);
+    treeSelection->setCurrentIndex(index,QItemSelectionModel::Select);
 }
 
 void MainWindow::on_toolButton_upInt_clicked()

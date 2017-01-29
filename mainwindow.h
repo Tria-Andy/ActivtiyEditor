@@ -7,7 +7,9 @@
 #include "jsonhandler.h"
 #include "activity.h"
 #include "calculation.h"
+#include "del_treeview.h"
 #include "del_intselect.h"
+#include "del_avgselect.h"
 
 namespace Ui {
 class MainWindow;
@@ -22,6 +24,7 @@ public:
     ~MainWindow();
 
 private slots:
+    void setSelectedIntRow(QModelIndex);
     void on_actionClear_triggered();
     void on_actionExit_triggered();
     void on_actionLoad_triggered();
@@ -31,6 +34,8 @@ private slots:
     void on_toolButton_update_clicked();
     void on_toolButton_upInt_clicked();
     void on_toolButton_downInt_clicked();
+    void on_actionSave_triggered();
+    void on_horizontalSlider_factor_valueChanged(int value);
 
 private:
     Ui::MainWindow *ui;
@@ -38,19 +43,21 @@ private:
     Activity *curr_activity;
     jsonHandler *jsonhandler;
     QItemSelectionModel *treeSelection;
+    del_treeview tree_del;
     del_intselect intSelect_del;
+    del_avgselect avgSelect_del;
     int avgCounter;
     //Intervall Chart
     QVector<double> secTicker,speedValues,polishValues,speedMinMax,rangeMinMax;
     void set_speedValues(int);
-    void set_speedgraph(double,double);
+    void set_speedgraph();
     void set_speedPlot(double,double);
     void set_polishValues(int,double);
+    void resetPlot();
 
     //Editor
     void select_activity_file();
     void loadfile(const QString &filename);
-    void setSelectedIntRow(QModelIndex);
     void selectAvgValues(QModelIndex,int);
     void setCurrentTreeIndex(bool);
     void set_activty_infos();

@@ -37,8 +37,8 @@ private:
     QList<QStandardItem*> setSwimLap(int,QString);
     QSortFilterProxyModel *swimProxy;
     QString v_date,curr_sport;
+    QMap<int,QStringList> itemHeader,avgHeader;
     QStringList ride_items,swimType;
-    QMap<int,QStringList> itemHeader;
     QVector<double> calc_speed,calc_cadence,p_swim_time,new_dist;
     QVector<int> p_swim_timezone,p_hf_timezone,hf_zone_avg;
     double swim_track,swim_cv,swim_sri,polishFactor,hf_threshold,hf_max;
@@ -46,41 +46,39 @@ private:
     bool changeRowCount,isUpdated,selectInt;
 
     //Functions    
-    void set_time_in_zones(bool);
+    void set_time_in_zones();
     void recalcIntTree();
-    void set_edit_samp_model(int);
+    void updateSampleModel(int);
+    void updateSwimLap();
     void updateSwimInt(QModelIndex,QItemSelectionModel*);
     void updateSwimBreak(QModelIndex,QItemSelectionModel*,int);
     void updateInterval();
-    void updateIntModel();
     void calcAvgValues();
-    double get_int_value(int,int,bool);
+    double get_int_value(int,int);
     double interpolate_speed(int,int,double);
 
     int get_swim_laps(int);
-    int check_is_intervall(int);
     int get_zone_values(double,int,bool);
 
 public:
     explicit Activity();
+    void set_jsonhandler(jsonHandler *p) {jsonhandler = p;}
     void setUpdateFlag(bool value) {isUpdated = value;}
     void prepareData();
     void build_intTree();
     void showSwimLap(bool);
     void showInterval(bool);
-
-    void updateSwimLap();
+    void updateIntModel(int,int);
+    void updateSwimModel();
     QHash<int,QModelIndex> selItem;
     void set_additional_ride_info();
     void act_reset();
-    QStandardItemModel *int_model,*samp_model,*curr_act_model,*edit_int_model,*xdata_model,*swim_xdata,*edit_samp_model;
-    QStandardItemModel *swim_pace_model, *swim_hf_model,*intTreeModel,*selItemModel,*avgModel;
+    QStandardItemModel *swim_pace_model, *swim_hf_model;
+    QStandardItemModel *intModel,*sampleModel,*xdata_model,*swimModel,*intTreeModel,*selItemModel,*avgModel;
     QMap<QString,QString> ride_info;
     QVector<double> sampSpeed,avgValues;
 
     //Recalculation
-    QStandardItemModel * set_int_model_pointer(bool);
-    QStandardItemModel * set_samp_model_pointer(bool);
     void updateIntTreeRow(QItemSelectionModel *);
     double get_int_distance(int);
     int get_int_duration(int);
@@ -90,7 +88,6 @@ public:
 
     //Value Getter and Setter
     void set_polishFactor(double vFactor) {polishFactor = vFactor;}
-    int get_header_num();
     void set_sport(QString a_sport) {curr_sport = a_sport;}
     QString get_sport() {return curr_sport;}
 

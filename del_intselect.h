@@ -24,50 +24,47 @@ public:
     {
         Q_UNUSED(option)
 
-        if(index.column() == 1)
+        if(index.row() == 0)
         {
-            if(index.row() == 0)
+            QLineEdit *editor = new QLineEdit(parent);
+            editor->setFrame(true);
+            return editor;
+        }
+
+        if(intType == SwimLap)
+        {
+            if(index.row() == 1)
             {
-                QLineEdit *editor = new QLineEdit(parent);
+                QComboBox *editor = new QComboBox(parent);
                 editor->setFrame(true);
                 return editor;
             }
-
-            if(intType == SwimLap)
+            if(index.row() == 3 || index.row() == 6)
             {
-                if(index.row() == 1)
-                {
-                    QComboBox *editor = new QComboBox(parent);
-                    editor->setFrame(true);
-                    return editor;
-                }
-                if(index.row() == 3 || index.row() == 6)
-                {
-                    QSpinBox *editor = new QSpinBox(parent);
-                    editor->setMinimum(0);
-                    editor->setMaximum(200);
-                    editor->setFrame(true);
-                    return editor;
-                }
+                QSpinBox *editor = new QSpinBox(parent);
+                editor->setMinimum(0);
+                editor->setMaximum(200);
+                editor->setFrame(true);
+                return editor;
             }
-            if(intType == Interval)
+        }
+        if(intType == Interval)
+        {
+            if(index.row() == 1)
             {
-                if(index.row() == 1)
-                {
-                    QSpinBox *editor = new QSpinBox(parent);
-                    editor->setMinimum(0);
-                    editor->setMaximum(10000);
-                    editor->setFrame(true);
-                    return editor;
-                }
-                if(index.row() == 2)
-                {
-                    QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
-                    editor->setMinimum(0.0);
-                    editor->setFrame(true);
-                    editor->setDecimals(3);
-                    return editor;
-                }
+                QSpinBox *editor = new QSpinBox(parent);
+                editor->setMinimum(0);
+                editor->setMaximum(10000);
+                editor->setFrame(true);
+                return editor;
+            }
+            if(index.row() == 2)
+            {
+                QDoubleSpinBox *editor = new QDoubleSpinBox(parent);
+                editor->setMinimum(0.0);
+                editor->setFrame(true);
+                editor->setDecimals(3);
+                return editor;
             }
         }
 
