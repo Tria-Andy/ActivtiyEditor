@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <widget class="QFrame" name="frame">
+     <widget class="QFrame" name="frame_activity">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>1</horstretch>
@@ -25,13 +25,13 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>300</width>
+        <width>250</width>
         <height>0</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
-        <width>400</width>
+        <width>350</width>
         <height>16777215</height>
        </size>
       </property>
@@ -58,18 +58,18 @@
         <number>4</number>
        </property>
        <item>
-        <widget class="QTextBrowser" name="textBrowser_Info">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
+        <widget class="QTableView" name="tableView_actInfo">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
          </property>
-         <property name="frameShape">
-          <enum>QFrame::Panel</enum>
+         <property name="showGrid">
+          <bool>true</bool>
          </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+         <property name="gridStyle">
+          <enum>Qt::SolidLine</enum>
          </property>
         </widget>
        </item>
@@ -171,7 +171,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QListView" name="listView_intervall">
+        <widget class="QListView" name="listView_files">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -269,6 +269,9 @@
               <pointsize>10</pointsize>
              </font>
             </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
             <property name="frameShape">
              <enum>QFrame::Panel</enum>
             </property>
@@ -334,84 +337,6 @@
                 <property name="bottomMargin">
                  <number>1</number>
                 </property>
-                <item>
-                 <widget class="QFrame" name="frame_controls">
-                  <property name="frameShape">
-                   <enum>QFrame::Panel</enum>
-                  </property>
-                  <property name="frameShadow">
-                   <enum>QFrame::Raised</enum>
-                  </property>
-                  <layout class="QHBoxLayout" name="horizontalLayout_4">
-                   <property name="spacing">
-                    <number>2</number>
-                   </property>
-                   <property name="leftMargin">
-                    <number>2</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>2</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>2</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>2</number>
-                   </property>
-                   <item>
-                    <widget class="QToolButton" name="toolButton_add">
-                     <property name="minimumSize">
-                      <size>
-                       <width>70</width>
-                       <height>25</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>Add</string>
-                     </property>
-                     <property name="toolButtonStyle">
-                      <enum>Qt::ToolButtonIconOnly</enum>
-                     </property>
-                     <property name="autoRaise">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QToolButton" name="toolButton_update">
-                     <property name="minimumSize">
-                      <size>
-                       <width>70</width>
-                       <height>25</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>Update</string>
-                     </property>
-                     <property name="autoRaise">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                   <item>
-                    <widget class="QToolButton" name="toolButton_delete">
-                     <property name="minimumSize">
-                      <size>
-                       <width>70</width>
-                       <height>25</height>
-                      </size>
-                     </property>
-                     <property name="text">
-                      <string>Delete</string>
-                     </property>
-                     <property name="autoRaise">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </item>
                 <item>
                  <widget class="QFrame" name="frame_int">
                   <property name="frameShape">
@@ -514,6 +439,84 @@
                   <property name="frameShape">
                    <enum>QFrame::Panel</enum>
                   </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QFrame" name="frame_controls">
+                  <property name="frameShape">
+                   <enum>QFrame::Panel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QHBoxLayout" name="horizontalLayout_4">
+                   <property name="spacing">
+                    <number>2</number>
+                   </property>
+                   <property name="leftMargin">
+                    <number>2</number>
+                   </property>
+                   <property name="topMargin">
+                    <number>2</number>
+                   </property>
+                   <property name="rightMargin">
+                    <number>2</number>
+                   </property>
+                   <property name="bottomMargin">
+                    <number>2</number>
+                   </property>
+                   <item>
+                    <widget class="QToolButton" name="toolButton_add">
+                     <property name="minimumSize">
+                      <size>
+                       <width>70</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Add</string>
+                     </property>
+                     <property name="toolButtonStyle">
+                      <enum>Qt::ToolButtonIconOnly</enum>
+                     </property>
+                     <property name="autoRaise">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="toolButton_update">
+                     <property name="minimumSize">
+                      <size>
+                       <width>70</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Update</string>
+                     </property>
+                     <property name="autoRaise">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QToolButton" name="toolButton_delete">
+                     <property name="minimumSize">
+                      <size>
+                       <width>70</width>
+                       <height>25</height>
+                      </size>
+                     </property>
+                     <property name="text">
+                      <string>Delete</string>
+                     </property>
+                     <property name="autoRaise">
+                      <bool>true</bool>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
                  </widget>
                 </item>
                </layout>
@@ -702,7 +705,7 @@
               <widget class="QLabel" name="label_factorValue">
                <property name="minimumSize">
                 <size>
-                 <width>50</width>
+                 <width>30</width>
                  <height>0</height>
                 </size>
                </property>
@@ -710,22 +713,6 @@
                 <string>-</string>
                </property>
               </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer_2">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Fixed</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>50</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
              </item>
              <item>
               <widget class="QLabel" name="label_2">

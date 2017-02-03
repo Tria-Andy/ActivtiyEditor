@@ -29,24 +29,27 @@ private slots:
     void on_actionExit_triggered();
     void on_actionLoad_triggered();
     void on_treeView_intervall_clicked(const QModelIndex &index);
-    void on_actionRecalc_triggered();
     void on_actionUnSelect_triggered();
     void on_toolButton_update_clicked();
     void on_toolButton_upInt_clicked();
     void on_toolButton_downInt_clicked();
     void on_actionSave_triggered();
     void on_horizontalSlider_factor_valueChanged(int value);
+    void on_listView_files_clicked(const QModelIndex &index);
+    void on_toolButton_delete_clicked();
+    void on_toolButton_add_clicked();
 
 private:
     Ui::MainWindow *ui;
-
     Activity *curr_activity;
-    jsonHandler *jsonhandler;
+    QStandardItemModel *fileModel,*infoModel;
     QItemSelectionModel *treeSelection;
     del_treeview tree_del;
     del_intselect intSelect_del;
     del_avgselect avgSelect_del;
     int avgCounter;
+    bool actLoaded;
+
     //Intervall Chart
     QVector<double> secTicker,speedValues,polishValues,speedMinMax,rangeMinMax;
     void set_speedValues(int);
@@ -56,14 +59,14 @@ private:
     void resetPlot();
 
     //Editor
+    void read_activityFiles();
+    void clearActivtiy();
     void select_activity_file();
     void loadfile(const QString &filename);
     void selectAvgValues(QModelIndex,int);
     void setCurrentTreeIndex(bool);
-    void set_activty_infos();
-    void set_activty_intervalls();
-    void set_avg_fields();
-    void write_hf_infos();
+    void init_editorViews();
+    void update_infoModel();
     void fill_WorkoutContent();
     void unselect_intRow();
     void set_menuItems(bool,bool);

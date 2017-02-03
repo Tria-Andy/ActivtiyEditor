@@ -2,34 +2,38 @@
 #define DEL_AVGSELECT_H
 
 #include <QtGui>
-#include <QItemDelegate>
+#include <QStyledItemDelegate>
 #include <QLabel>
 #include <QDebug>
 #include "settings.h"
 
 
-class del_avgselect : public QItemDelegate
+class del_avgselect : public QStyledItemDelegate
 {
     Q_OBJECT
 
 private:
     QColor get_backcolor(bool isSel,QString name) const
     {
+        QColor setColor;
+        QString breakName = settings::get_generalValue("breakname");
         if(isSel)
         {
-            return QColor(Qt::green);
+            setColor.setRgb(0,255,0,100);
         }
         else
         {
-            if(name == settings::get_generalValue("breakname"))
+            if(name == breakName)
             {
-                return settings::get_itemColor(settings::get_generalValue("breakname"));
+                setColor = settings::get_itemColor(breakName);
+                setColor.setAlpha(125);
             }
             else
             {
-                return QColor(Qt::lightGray);
+                setColor.setRgb(175,175,175,75);
             }
         }
+        return setColor;
     }
 
     bool get_isSelected(const QModelIndex &index) const
@@ -43,12 +47,12 @@ private:
     }
 
 public:
-    explicit del_avgselect(QObject *parent = 0) : QItemDelegate(parent) {}
+    explicit del_avgselect(QObject *parent = 0) : QStyledItemDelegate(parent) {}
 
     virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
     {
         drawBackground(painter, option, index);
-        QItemDelegate::paint(painter, option, index);
+        QStyledItemDelegate::paint(painter, option, index);
     }
 
 protected:
@@ -57,10 +61,13 @@ protected:
         painter->save();
         bool isSelected = del_avgselect::get_isSelected(index);
         QString lapName = del_avgselect::get_lapName(index);
+        QLinearGradient setGradient(option.rect.topLeft(),option.rect.bottomRight());
+        setGradient.setColorAt(0,Qt::white);
+        setGradient.setColorAt(1,get_backcolor(isSelected,lapName));
 
-        QRect rect_text(option.rect.x()+2,option.rect.y(), option.rect.width(),option.rect.height());
-        painter->drawText(rect_text,index.data().toString(),QTextOption(Qt::AlignLeft | Qt::AlignVCenter));
-        painter->fillRect(option.rect,del_avgselect::get_backcolor(isSelected,lapName));
+        //QRect rect_text(option.rect.x()+2,option.rect.y(), option.rect.width(),option.rect.height());
+        //painter->drawText(rect_text,index.data().toString(),QTextOption(Qt::AlignLeft | Qt::AlignVCenter));
+        painter->fillRect(option.rect,setGradient);
         painter->restore();
     }
 };

@@ -198,11 +198,11 @@ void settings::loadSettings()
         myvalues->beginGroup("JsonFile");
             settingList << myvalues->value("actinfo").toString().split(splitter);
             listMap.insert("JsonFile",settingList);
+            settingList.clear();
             settingString = myvalues->value("intInfo").toString();
             fill_mapList(&intList,&settingString);
             settingString = myvalues->value("sampinfo").toString();
             fill_mapList(&sampList,&settingString);
-            settingList.clear();
         myvalues->endGroup();
 
         myvalues->beginGroup("Keylist");

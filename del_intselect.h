@@ -115,6 +115,11 @@ public:
             QLineEdit *lineEdit = static_cast<QLineEdit*>(editor);
             QString value = lineEdit->text();
             model->setData(index,value);
+            if(value.contains(settings::get_generalValue("breakname")))
+            {
+                model->setData(model->index(3,0),"00:30");
+                model->setData(model->index(2,0),0);
+            }
         }
 
         if(intType == SwimLap)
@@ -148,7 +153,7 @@ public:
                 spinBox->interpretText();
                 double value = spinBox->value();
                 model->setData(index, value);
-                setPace(model,get_timesec(model->data(model->index(3,1)).toString()));
+                setPace(model,get_timesec(model->data(model->index(3,0)).toString()));
             }
         }
     }
@@ -161,21 +166,21 @@ public:
 
     void setPace(QAbstractItemModel *model,int sec) const
     {
-        double dist = model->data(model->index(2,1)).toDouble();
-        model->setData(model->index(4,1),set_time(calc_lapPace(sport,sec,dist)));
+        double dist = model->data(model->index(2,0)).toDouble();
+        model->setData(model->index(4,0),set_time(calc_lapPace(sport,sec,dist)));
         setSpeed(model,sec);
     }
 
     void setSpeed(QAbstractItemModel *model,int sec) const
     {
         double factor = sport == settings::isSwim ? 1000.0 : 1.0;
-        double dist = model->data(model->index(2,1)).toDouble();
-        model->setData(model->index(5,1),calcSpeed(sec,dist,factor));
+        double dist = model->data(model->index(2,0)).toDouble();
+        model->setData(model->index(5,0),calcSpeed(sec,dist,factor));
     }
 
     void set_duration(QAbstractItemModel *model) const
     {
-        model->data(model->index(1,1)).toInt();
+        model->data(model->index(1,0)).toInt();
     }
 
 };

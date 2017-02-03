@@ -7,15 +7,91 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     settings::loadSettings();
+    fileModel = new QStandardItemModel;
+    fileModel->setColumnCount(2);
     avgCounter = 0;
+    actLoaded = false;
+
+    ui->tableView_actInfo->setStyleSheet("background-color: #e6e6e6");
+    ui->treeView_intervall->setStyleSheet("background-color: #e6e6e6");
+    ui->listView_files->setStyleSheet("background-color: #e6e6e6");
+
     this->set_speedgraph();
     this->resetPlot();
+    this->read_activityFiles();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::read_activityFiles()
+{
+    Activity *readFile;
+    QFile file;
+    QString filePath,actString;
+
+    QStringList infoHeader = settings::get_listValues("JsonFile");
+    QDir directory(settings::get_gcInfo("gcpath"));
+    directory.setSorting(QDir::Name | QDir::Reversed);
+    directory.setFilter(QDir::Files);
+    QFileInfoList fileList = directory.entryInfoList();
+    int fileCount = fileList.count();
+    QDateTime workDateTime;
+    workDateTime.setTimeSpec(Qt::TimeZone);
+    fileModel->setRowCount(fileCount);
+
+    for(int i = 0; i < fileCount; ++i)
+    {
+        filePath = fileList.at(i).path()+QDir::separator()+fileList.at(i).fileName();
+        file.setFileName(filePath);
+        file.open(QFile::ReadOnly | QFile::Text);
+        readFile = new Activity(file.readAll(),false);
+        workDateTime = QDateTime::fromString(readFile->ride_info.value("Date"),"yyyy/MM/dd hh:mm:ss UTC").addSecs(workDateTime.offsetFromUtc());
+        actString = workDateTime.toString("dd.MM.yyyy hh:mm:ss")+" - "+readFile->ride_info.value("Sport") + " - " + readFile->ride_info.value("Workout Code");
+        fileModel->setData(fileModel->index(i,0),actString);
+        fileModel->setData(fileModel->index(i,1),filePath);
+        ui->progressBar_save->setValue((100/fileCount)*i);
+        file.close();
+        delete readFile;
+    }
+    ui->progressBar_save->reset();
+
+    ui->listView_files->setModel(fileModel);
+    infoModel = new QStandardItemModel(infoHeader.count(),1);
+    infoModel->setVerticalHeaderLabels(infoHeader);
+    ui->tableView_actInfo->setModel(infoModel);
+    ui->tableView_actInfo->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView_actInfo->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView_actInfo->horizontalHeader()->setVisible(false);
+    ui->tableView_actInfo->verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView_actInfo->verticalHeader()->setSectionsClickable(false);
+    ui->tableView_actInfo->setFixedHeight(infoHeader.count()*25);
+    this->loadfile(fileList.at(0).path()+QDir::separator()+fileList.at(0).fileName());
+    actLoaded = true;
+}
+
+void MainWindow::clearActivtiy()
+{
+    this->resetPlot();
+    for(int i = 0; i < infoModel->rowCount(); ++i)
+    {
+        infoModel->setData(infoModel->index(i,0),"-");
+    }
+    if(actLoaded)
+    {
+        delete curr_activity->intModel;
+        delete curr_activity->sampleModel;
+        delete curr_activity->intTreeModel;
+        delete curr_activity->avgModel;
+        delete curr_activity->selItemModel;
+        if(curr_activity->get_sport() == settings::isSwim) delete curr_activity->swimModel;
+        delete curr_activity;
+    }
+    actLoaded = false;
+}
+
 
 void MainWindow::select_activity_file()
 {
@@ -57,25 +133,25 @@ void MainWindow::loadfile(const QString &filename)
                                      .arg(file.errorString()));
            return;
         }
-        curr_activity = new Activity();
         filecontent = file.readAll();
-        jsonhandler = new jsonHandler(true,filecontent,curr_activity);
-        curr_activity->set_jsonhandler(jsonhandler);
+        curr_activity = new Activity(filecontent,true);
+        actLoaded = true;
         file.close();
 
         settings::set_act_isload(true);
         intSelect_del.sport = tree_del.sport = curr_activity->get_sport();
-        this->set_activty_infos();
-        this->set_activty_intervalls();
+        this->update_infoModel();
+        this->init_editorViews();
+
     }
 }
 
-void MainWindow::set_activty_intervalls()
+void MainWindow::init_editorViews()
 {
     ui->treeView_intervall->setModel(curr_activity->intTreeModel);
     ui->treeView_intervall->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    ui->treeView_intervall->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    ui->treeView_intervall->header()->setMinimumSectionSize(100);
+    ui->treeView_intervall->header()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->treeView_intervall->header()->setMaximumSectionSize(ui->treeView_intervall->width()/curr_activity->intTreeModel->columnCount());
     ui->treeView_intervall->setItemDelegate(&tree_del);
 
     treeSelection = ui->treeView_intervall->selectionModel();
@@ -83,75 +159,34 @@ void MainWindow::set_activty_intervalls()
 
     ui->tableView_selectInt->setModel(curr_activity->selItemModel);
     ui->tableView_selectInt->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView_selectInt->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    ui->tableView_selectInt->verticalHeader()->setSectionsClickable(false);
     ui->tableView_selectInt->horizontalHeader()->setVisible(false);
-    ui->tableView_selectInt->verticalHeader()->setFixedWidth(ui->tableView_selectInt->width()/2);
     ui->tableView_selectInt->setItemDelegate(&intSelect_del);
 
     ui->tableView_avgValues->setModel(curr_activity->avgModel);
     ui->tableView_avgValues->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableView_avgValues->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->tableView_avgValues->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    ui->tableView_avgValues->verticalHeader()->setFixedWidth(ui->tableView_selectInt->verticalHeader()->width());
+    ui->tableView_avgValues->verticalHeader()->setSectionsClickable(false);
     ui->tableView_avgValues->horizontalHeader()->setVisible(false);
-    ui->tableView_avgValues->verticalHeader()->setFixedWidth(ui->tableView_avgValues->width()/2);
+
+    //ui->tableView_avgValues->verticalHeader()->setFixedWidth(ui->frame_editInt->width()/2);
 }
 
-void MainWindow::set_activty_infos()
+void MainWindow::update_infoModel()
 {
-    ui->textBrowser_Info->clear();
-
-    QTextCursor cursor = ui->textBrowser_Info->textCursor();
-    cursor.beginEditBlock();
-
-    QTextTableFormat tableFormat;
-    tableFormat.setCellSpacing(2);
-    tableFormat.setCellPadding(2);
-    tableFormat.setBorder(0);
-    tableFormat.setBackground(QBrush(QColor(220,220,220)));
-    QVector<QTextLength> constraints;
-        constraints << QTextLength(QTextLength::PercentageLength, 40)
-                    << QTextLength(QTextLength::PercentageLength, 60);
-    tableFormat.setColumnWidthConstraints(constraints);
-
-    QTextTable *table = cursor.insertTable(curr_activity->ride_info.count(),2,tableFormat);
-
-        QTextFrame *frame = cursor.currentFrame();
-        QTextFrameFormat frameFormat = frame->frameFormat();
-        frameFormat.setBorder(0);
-        frame->setFrameFormat(frameFormat);
-
-        QTextCharFormat format = cursor.charFormat();
-        format.setFontPointSize(8);
-
-        QTextCharFormat infoFormat = format;
-        infoFormat.setFontWeight(QFont::Bold);
-
-        QTextCharFormat valueFormat = format;
-
-    int i = 0;
-    for(QMap<QString,QString>::const_iterator it =  curr_activity->ride_info.cbegin(), end = curr_activity->ride_info.cend(); it != end; ++it,++i)
+    for(int i = 0; i < infoModel->rowCount();++i)
     {
-        QTextTableCell cell = table->cellAt(i,0);
-        QTextCursor cellCurser = cell.firstCursorPosition();
-        cellCurser.insertText(it.key(),infoFormat);
-        cell = table->cellAt(i,1);
-        cellCurser = cell.firstCursorPosition();
-        cellCurser.insertText(it.value(),valueFormat);
+        infoModel->setData(infoModel->index(i,0),curr_activity->ride_info.value(settings::get_listValues("JsonFile").at(i)));
     }
-    //table->insertRows(table->rows(),1);
-
-    cursor.endEditBlock();
-    cursor.setPosition(0);
-    ui->textBrowser_Info->setTextCursor(cursor);
 }
-
 
 void MainWindow::on_actionClear_triggered()
 {
-    this->resetPlot();
-    curr_activity->intModel->clear();
-    curr_activity->sampleModel->clear();
-    curr_activity->intTreeModel->clear();
-    curr_activity->avgModel->clear();
-    curr_activity->selItemModel->clear();
+    this->clearActivtiy();
+    actLoaded = false;
 }
 
 void MainWindow::on_actionExit_triggered()
@@ -174,11 +209,7 @@ void MainWindow::setSelectedIntRow(QModelIndex index)
 
     treeSelection->select(index,QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     QString lapIdent = treeSelection->selectedRows(0).at(0).data().toString().trimmed();
-
-    for(int i = 0; i < treeSelection->selectedIndexes().count();++i)
-    {
-        curr_activity->selItem.insert(i,treeSelection->selectedRows(i).at(0));
-    }
+    curr_activity->set_selectedItem(treeSelection);
 
     if(isSwim)
     {
@@ -215,22 +246,19 @@ void MainWindow::selectAvgValues(QModelIndex index, int avgCol)
 {
     treeSelection->select(index,QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
     QStandardItem *avgItem = curr_activity->intTreeModel->itemFromIndex(treeSelection->selectedRows(avgCol).at(0));
-
     bool checkAvg = avgItem->data().toBool();
-
-    for(int i = 0; i < treeSelection->selectedIndexes().count();++i)
-    {
-        curr_activity->selItem.insert(i,treeSelection->selectedRows(i).at(0));
-    }
+    curr_activity->set_selectedItem(treeSelection);
 
     if(checkAvg == false)
     {
+        curr_activity->avgItems.insert(index.row(),index);
         curr_activity->intTreeModel->setData(index,"+");
         curr_activity->intTreeModel->setData(index,1,Qt::UserRole+1);
         curr_activity->set_avgValues(++avgCounter,1);
     }
     else
     {
+        curr_activity->avgItems.remove(index.row());
         curr_activity->intTreeModel->setData(index,"-");
         curr_activity->intTreeModel->setData(index,0,Qt::UserRole+1);
         curr_activity->set_avgValues(--avgCounter,-1);
@@ -241,13 +269,11 @@ void MainWindow::selectAvgValues(QModelIndex index, int avgCol)
 
 void MainWindow::on_treeView_intervall_clicked(const QModelIndex &index)
 {
-    curr_activity->selItem.clear();
     int avgCol = curr_activity->intTreeModel->columnCount()-1;
 
     if(index.column() == avgCol)
     {
         this->selectAvgValues(index,avgCol);
-        ui->treeView_intervall->setItemDelegateForRow(index.row(),&avgSelect_del);
     }
     else
     {
@@ -335,7 +361,6 @@ void MainWindow::resetPlot()
     ui->widget_plot->plotLayout()->setRowStretchFactor(1,0.0001);
     ui->widget_plot->replot();
 }
-
 
 void MainWindow::set_speedgraph()
 {
@@ -428,23 +453,33 @@ void MainWindow::on_actionSave_triggered()
     {
         curr_activity->updateIntModel(2,1);
     }
-}
-
-void MainWindow::on_actionRecalc_triggered()
-{
-
+    curr_activity->writeChangedData();
 }
 
 void MainWindow::on_actionUnSelect_triggered()
 {
-
+    curr_activity->reset_avgSelection();
+    avgCounter = 0;
 }
 
 void MainWindow::on_toolButton_update_clicked()
 {
-    curr_activity->updateIntTreeRow(treeSelection);
+    ui->tableView_selectInt->setCurrentIndex(curr_activity->selItemModel->index(0,0));
+    curr_activity->updateRow_intTree(treeSelection);
+    this->update_infoModel();
 }
 
+void MainWindow::on_toolButton_delete_clicked()
+{
+    curr_activity->removeRow_intTree(treeSelection);
+    this->update_infoModel();
+}
+
+void MainWindow::on_toolButton_add_clicked()
+{
+    curr_activity->addRow_intTree(treeSelection);
+    treeSelection->setCurrentIndex(ui->treeView_intervall->indexAbove(treeSelection->currentIndex()),QItemSelectionModel::Select);
+}
 void MainWindow::setCurrentTreeIndex(bool up)
 {
     QModelIndex index;
@@ -485,4 +520,10 @@ void MainWindow::on_toolButton_upInt_clicked()
 void MainWindow::on_toolButton_downInt_clicked()
 {
     this->setCurrentTreeIndex(false);
+}
+
+void MainWindow::on_listView_files_clicked(const QModelIndex &index)
+{
+    this->clearActivtiy();
+    this->loadfile(fileModel->data(fileModel->index(index.row(),1)).toString());
 }

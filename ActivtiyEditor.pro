@@ -42,3 +42,6 @@ HEADERS  += mainwindow.h \
     del_treeview.h
 
 FORMS    += mainwindow.ui
+
+RESOURCES += \
+    images.qrc
