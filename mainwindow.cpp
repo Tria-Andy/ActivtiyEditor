@@ -31,13 +31,13 @@ void MainWindow::read_activityFiles()
     Activity *readFile;
     QFile file;
     QString filePath,actString;
-
+    int jsonMaxFiles = settings::get_generalValue("filecount").toInt();
     QStringList infoHeader = settings::get_listValues("JsonFile");
     QDir directory(settings::get_gcInfo("gcpath"));
     directory.setSorting(QDir::Name | QDir::Reversed);
     directory.setFilter(QDir::Files);
     QFileInfoList fileList = directory.entryInfoList();
-    int fileCount = fileList.count();
+    int fileCount = fileList.count() > jsonMaxFiles ? jsonMaxFiles : fileList.count();
     QDateTime workDateTime;
     workDateTime.setTimeSpec(Qt::TimeZone);
     fileModel->setRowCount(fileCount);
@@ -49,7 +49,7 @@ void MainWindow::read_activityFiles()
         file.open(QFile::ReadOnly | QFile::Text);
         readFile = new Activity(file.readAll(),false);
         workDateTime = QDateTime::fromString(readFile->ride_info.value("Date"),"yyyy/MM/dd hh:mm:ss UTC").addSecs(workDateTime.offsetFromUtc());
-        actString = workDateTime.toString("dd.MM.yyyy hh:mm:ss")+" - "+readFile->ride_info.value("Sport") + " - " + readFile->ride_info.value("Workout Code");
+        actString = QDate().shortDayName(workDateTime.date().dayOfWeek())+" - " +workDateTime.toString("dd.MM.yyyy hh:mm:ss")+" - "+readFile->ride_info.value("Sport") + " - " + readFile->ride_info.value("Workout Code");
         fileModel->setData(fileModel->index(i,0),actString);
         fileModel->setData(fileModel->index(i,1),filePath);
         ui->progressBar_save->setValue((100/fileCount)*i);
@@ -171,8 +171,6 @@ void MainWindow::init_editorViews()
     ui->tableView_avgValues->verticalHeader()->setFixedWidth(ui->tableView_selectInt->verticalHeader()->width());
     ui->tableView_avgValues->verticalHeader()->setSectionsClickable(false);
     ui->tableView_avgValues->horizontalHeader()->setVisible(false);
-
-    //ui->tableView_avgValues->verticalHeader()->setFixedWidth(ui->frame_editInt->width()/2);
 }
 
 void MainWindow::update_infoModel()
@@ -213,6 +211,7 @@ void MainWindow::setSelectedIntRow(QModelIndex index)
 
     if(isSwim)
     {
+        ui->horizontalSlider_factor->setEnabled(false);
         if(treeSelection->selectedRows(2).at(0).data().toInt() == 1)
         {
             isInt = false;
@@ -229,12 +228,12 @@ void MainWindow::setSelectedIntRow(QModelIndex index)
     }
     else
     {
+        ui->horizontalSlider_factor->setEnabled(true);
         curr_activity->showInterval(true);
     }
 
     if(curr_activity->intTreeModel->itemFromIndex(index)->parent() == nullptr)
     {
-        ui->horizontalSlider_factor->setValue(0);
         this->set_speedValues(index.row());
     }
 
@@ -285,6 +284,7 @@ void MainWindow::on_horizontalSlider_factor_valueChanged(int value)
 {
     ui->label_factorValue->setText(QString::number(10-value) + "%");
     double factor = static_cast<double>(value)/100;
+    curr_activity->set_polishFactor(0.1-factor);
     int indexRow = ui->treeView_intervall->currentIndex().row();
     this->set_polishValues(indexRow,factor);
     rangeMinMax[0] = curr_activity->polish_SpeedValues(1.0,curr_activity->get_int_speed(indexRow),0.1-factor,false);
@@ -307,6 +307,8 @@ void MainWindow::set_polishValues(int lap,double factor)
         {
             polishValues[i] = curr_activity->polish_SpeedValues(speedValues[i],avg,0.10-factor,true);
         }
+        //if(speedMinMax[0] > polishValues[i]) rangeMinMax[0] = speedMinMax[0] = polishValues[i];
+        //if(speedMinMax[1] < polishValues[i]) rangeMinMax[1] = speedMinMax[1] = polishValues[i];
     }
     this->set_speedPlot(avg,intdist);
 }
@@ -339,7 +341,12 @@ void MainWindow::set_speedValues(int index)
         if(speedMinMax[1] < current) rangeMinMax[1] = speedMinMax[1] = current;
     }
 
-    if(curr_activity->get_sport() != settings::isSwim) this->set_polishValues(index,0.0);
+    if(curr_activity->get_sport() != settings::isSwim)
+    {
+        double factor = static_cast<double>(ui->horizontalSlider_factor->value())/100;
+        this->set_polishValues(index,factor);
+    }
+
     this->set_speedPlot(avg,intdist);
 }
 
@@ -383,7 +390,7 @@ void MainWindow::set_speedgraph()
 
     QCPLayoutGrid *subLayout = new QCPLayoutGrid;
     ui->widget_plot->plotLayout()->addElement(1,0,subLayout);
-    subLayout->setMargins(QMargins(50,0,50,5));
+    subLayout->setMargins(QMargins(200,0,200,5));
     subLayout->addElement(0,0,ui->widget_plot->legend);
 }
 

@@ -34,9 +34,11 @@ private:
     QSortFilterProxyModel *swimProxy;
     QString v_date,curr_sport;
     QMap<int,QStringList> itemHeader,avgHeader;
+    QHash<QString,int> paceTimeInZone,hfTimeInZone,hfZoneAvg;
+    QHash<QString,QPair<double,double>> swimSpeed;
     QStringList ride_items,swimType,levels;
     QVector<double> calc_speed,calc_cadence,swimTime,new_dist;
-    QVector<int> swimTimezone,hfTimezone,hfZoneAvg;
+    QVector<int> swimTimezone,hfTimezone;
     double swim_track,swim_cv,swim_sri,polishFactor,hf_threshold,hf_max;
     int dist_factor,avgCounter,pace_cv,zone_count,move_time,swim_pace,hf_avg;
     bool isSwim,changeRowCount,isUpdated,selectInt;
@@ -45,6 +47,7 @@ private:
     void readJsonFile(QString,bool);
     void recalcIntTree();
     void updateSampleModel(int);
+    int build_swimModel(bool,QString,int,int,int,int,double);
     void updateSwimLap();
     void updateSwimInt(QModelIndex,QItemSelectionModel*);
     void updateSwimBreak(QModelIndex,QItemSelectionModel*,int);

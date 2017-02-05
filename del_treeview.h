@@ -33,7 +33,7 @@ public:
 
         if(option.state & QStyle::State_Selected)
         {
-            setColor.setRgb(0,0,255,100);
+            setColor.setRgb(0,255,0,100);
             setGradient.setColorAt(1,setColor);
             painter->fillRect(option.rect,setGradient);
         }
