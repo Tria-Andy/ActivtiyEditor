@@ -253,8 +253,8 @@ void jsonHandler::write_xdataModel(QString sport, QStandardItemModel *model)
             item_array.insert("SECS",QJsonValue::fromVariant(model->data(model->index(i,1,QModelIndex()))));
             item_array.insert("KM",QJsonValue::fromVariant(model->data(model->index(i,2,QModelIndex()))));
             value_array.insert(0,QJsonValue::fromVariant(model->data(model->index(i,3,QModelIndex()))));
-            value_array.insert(1,QJsonValue::fromVariant(model->data(model->index(i,5,QModelIndex()))));
-            value_array.insert(2,QJsonValue::fromVariant(model->data(model->index(i,8,QModelIndex()))));
+            value_array.insert(1,QJsonValue::fromVariant(model->data(model->index(i,4,QModelIndex()))));
+            value_array.insert(2,QJsonValue::fromVariant(model->data(model->index(i,5,QModelIndex()))));
             item_array["VALUES"] = value_array;
             intArray.insert(i,item_array);
         }

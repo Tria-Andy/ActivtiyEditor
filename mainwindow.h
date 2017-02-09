@@ -72,9 +72,6 @@ private:
     void set_menuItems(bool,bool);
     void reset_jsontext();
     void freeMem();
-
-
-
 };
 
 #endif // MAINWINDOW_H

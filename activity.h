@@ -29,54 +29,56 @@
 class Activity : public jsonHandler
 {
 private:
-    QList<QStandardItem*> setIntRow(int);
+    QList<QStandardItem*> setIntRow(int,bool);
     QList<QStandardItem*> setSwimLap(int,QString);
     QSortFilterProxyModel *swimProxy;
     QString v_date,curr_sport;
     QMap<int,QStringList> itemHeader,avgHeader;
     QHash<QString,int> paceTimeInZone,hfTimeInZone,hfZoneAvg;
-    QHash<QString,QPair<double,double>> swimSpeed;
+    QHash<QString,QPair<double,double>> rangeLevels;
+    QHash<QString,QVector<double>> swimHFZoneFactor;
     QStringList ride_items,swimType,levels;
     QVector<double> calc_speed,calc_cadence,swimTime,new_dist;
-    QVector<int> swimTimezone,hfTimezone;
     double swim_track,swim_cv,swim_sri,polishFactor,hf_threshold,hf_max;
-    int dist_factor,avgCounter,pace_cv,zone_count,move_time,swim_pace,hf_avg;
+    int distFactor,avgCounter,pace_cv,zone_count,move_time,swim_pace,hf_avg;
     bool isSwim,changeRowCount,isUpdated,selectInt;
 
     //Functions    
     void readJsonFile(QString,bool);
-    void recalcIntTree();
-    void updateSampleModel(int);
-    int build_swimModel(bool,QString,int,int,int,int,double);
+    void prepareData();
+    void build_intTree(bool);
+    int build_swimModel(bool,QString,int,int,int,int);
+    QString build_lapName(double,bool);
     void updateSwimLap();
     void updateSwimInt(QModelIndex,QItemSelectionModel*);
     void updateSwimBreak(QModelIndex,QItemSelectionModel*,int);
     void updateInterval();
+    void recalcIntTree();
+    void updateSampleModel(int);
     void calcAvgValues();
     double get_int_value(int,int);
     double interpolate_speed(int,int,double);
 
     //Swim Calculations
-    void calc_HF_TimeInZone();
-    void calc_SwimTimeInZones();
+    void swimhfTimeInZone(bool);
+    void swimTimeInZone(int,double);
+    void fillRangeLevel(double,bool);
+    QString checkRangeLevel(double);
     int get_swim_laps(int);
     int get_zone_values(double,int,bool);
 
 public:
     explicit Activity(QString jsonfile = QString(),bool intAct = false);
+
     void set_selectedItem(QItemSelectionModel*);
-    void setUpdateFlag(bool value) {isUpdated = value;}
-    void prepareData();
-    void build_intTree();
     void showSwimLap(bool);
     void showInterval(bool);
     void updateIntModel(int,int);
-    void updateSwimModel();
+    void updateXDataModel();
     void writeChangedData();
     QHash<int,QModelIndex> selItem,avgItems;
     QHash<QString,int> swimPace,swimHF;
-    void act_reset();
-    QStandardItemModel *intModel,*sampleModel,*xdata_model,*swimModel,*intTreeModel,*selItemModel,*avgModel;
+    QStandardItemModel *intModel,*sampleModel,*xdataModel,*swimModel,*intTreeModel,*selItemModel,*avgModel;
     QMap<QString,QString> ride_info;
     QVector<double> sampSpeed,avgValues;
 
@@ -92,14 +94,13 @@ public:
 
     //Value Getter and Setter
     void set_polishFactor(double vFactor) {polishFactor = vFactor;}
-    void set_sport(QString a_sport) {curr_sport = a_sport;}
     QString get_sport() {return curr_sport;}
 
 
     //Averages
     void reset_avgSelection();
     void set_avgValues(int,int);
-    int get_dist_factor() {return dist_factor;}
+    int get_distFactor() {return distFactor;}
 
     int get_move_time() {return move_time;}
     int get_swim_pace() {return swim_pace;}

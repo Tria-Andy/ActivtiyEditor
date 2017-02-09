@@ -75,20 +75,20 @@ void MainWindow::read_activityFiles()
 void MainWindow::clearActivtiy()
 {
     this->resetPlot();
+
     for(int i = 0; i < infoModel->rowCount(); ++i)
     {
         infoModel->setData(infoModel->index(i,0),"-");
     }
-    if(actLoaded)
-    {
-        delete curr_activity->intModel;
-        delete curr_activity->sampleModel;
-        delete curr_activity->intTreeModel;
-        delete curr_activity->avgModel;
-        delete curr_activity->selItemModel;
-        if(curr_activity->get_sport() == settings::isSwim) delete curr_activity->swimModel;
-        delete curr_activity;
-    }
+
+    delete curr_activity->intModel;
+    delete curr_activity->sampleModel;
+    delete curr_activity->intTreeModel;
+    delete curr_activity->avgModel;
+    delete curr_activity->selItemModel;
+    if(curr_activity->get_sport() == settings::isSwim) delete curr_activity->swimModel;
+    delete curr_activity;
+
     actLoaded = false;
 }
 
@@ -142,7 +142,6 @@ void MainWindow::loadfile(const QString &filename)
         intSelect_del.sport = tree_del.sport = curr_activity->get_sport();
         this->update_infoModel();
         this->init_editorViews();
-
     }
 }
 
@@ -454,7 +453,7 @@ void MainWindow::on_actionSave_triggered()
 {
     if(curr_activity->get_sport() == settings::isSwim)
     {
-        curr_activity->updateSwimModel();
+        curr_activity->updateXDataModel();
     }
     else
     {
